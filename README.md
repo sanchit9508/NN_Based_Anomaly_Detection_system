@@ -1,4 +1,4 @@
-Multiagent Anomaly Detection system in Cloud Billing Cost <br/>
+MultiCloud Anomaly Detection system in Cloud Billing Cost <br/>
 Sanchit Mishra <br/>
 MSc - Artificial Intelligence and Machine Learning <br/>
 
