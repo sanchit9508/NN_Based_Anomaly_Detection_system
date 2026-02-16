@@ -1,0 +1,74 @@
+Field	Type	Description
+billing_account_id	String	The Cloud Billing account ID that the usage is associated with.
+invoice.month	String	The year and month (YYYYMM) of the invoice that includes the cost line items. For example: "201901" is equivalent to January, 2019.
+invoice.publisher_type	String	Indicates the publisher associated with the transaction. This field supports the splitting of invoices between transactions made directly with Google (first party), and transactions made with a partner (third party), which also signals what regulations might apply to the transaction.
+cost_type	String	The type of cost this line item represents: regular, tax, adjustment, or rounding error.
+service.id	String	The ID of the service that the usage is associated with.
+service.description	String	The Google Cloud service that reported the Cloud Billing data.
+sku.id	String	The ID of the resource used by the service. For the full list of SKUs, see Google Cloud SKUs.Note: You can use the sku.id column to map each of your line items to the list prices published on the Google Cloud pricing pages, in the Pricing Table report, and through the Cloud Billing Catalog API.
+sku.description	String	A description of the resource type used by the service. For example, a resource type for Cloud Storage is Standard Storage US.
+usage_start_time	Timestamp	The start time of the hourly usage window within which the given cost was calculated. The usage and costs for all services is displayed with hourly granularity, which means long running service usage is spread across multiple hourly windows.
+usage_end_time	Timestamp	The end time of the hourly usage window within which the given cost was calculated. The usage and costs for all services is displayed with hourly granularity, which means long running service usage is spread across multiple hourly windows.
+project	Struct	project contains fields that describe the Cloud Billing project, such as ID, number, name, ancestry_numbers, and labels.Caution: For newly created projects, project information might not be present on usage that occurs within 24 hours of project creation.
+project.id	String	The ID of the Google Cloud project that generated the Cloud Billing data.
+project.number	String	An internally generated, anonymized, unique identifier for the Google Cloud project that generated the Cloud Billing data. In your support cases and other customer communication, Google will refer to your projects by this project number.Note: The first full day of data for this field is October 29, 2020.
+project.name	String	The name of the Google Cloud project that generated the Cloud Billing data.
+project.ancestry_numbers	String	The ancestors in the resource hierarchy for the project identified by the specified project.id (for example, my-project-123).
+project.ancestors	Struct	This field describes the structure and value of the resource hierarchy of a cost line item, including projects, folders, and organizations. Ancestors are ordered from node to root (project, folder, then organization).
+project.ancestors.resource_name	String	The relative resource name for each ancestor in the format 'resourceType/resourceNumber'. Using project.ancestors.resource_name will offer a more complete view of project.ancestry_numbers.
+project.ancestors.display_name	String	The name that you created for your resource in your console.
+project.labels.key	String	If labels are present, the key portion of the key-value pair that comprises the label on the Google Cloud project where the usage occurred. For more information about using labels, see Using Labels.
+project.labels.value	String	If labels are present, the value portion of the key-value pair that comprises the label on the Google Cloud project where the usage occurred. For more information about using labels, see Using Labels.
+labels.key	String	If labels are present, the key portion of the key-value pair that comprises the label on the Google Cloud resource where the usage occurred. For more information about using labels, see Using Labels.
+labels.value	String	If labels are present, the value portion of the key-value pair that comprises the label on the Google Cloud resource where the usage occurred. For more information about using labels, see Using Labels.
+system_labels.key	String	If system labels are present, the key portion of the key-value pair that comprises the system-generated label on the resource where the usage occurred. See also, Available system labels.Note: The first full day of data with this field is September 18, 2018.
+system_labels.value	String	If system labels are present, the value portion of the key-value pair that comprises the system-generated label on the resource where the usage occurred. See also, Available system labels.Note: The first full day of data with this field is September 18, 2018.
+location.location	String	Location of usage at the level of a multi-region, country, region, or zone; or global for resources don't have a specific location. For more information, see Geography and regions and Google Cloud locations.Note: The first full day of data with this field is September 18, 2018.
+location.country	String	When location.location is a country, region, or zone, this field is the country of usage, e.g. US. For more information, see Geography and regions and Google Cloud locations.Note: The first full day of data with this field is September 18, 2018.
+location.region	String	When location.location is a region or zone, this field is the region of usage, e.g. us-central1. For more information, see Geography and regions and Google Cloud locations.Note: The first full day of data with this field is September 18, 2018.
+location.zone	String	When location.location is a zone, this field is the zone of usage, e.g. us-central1-a. For more information, see Geography and regions and Google Cloud locations.Note: The first full day of data with this field is September 18, 2018.
+cost	Float	Cost per the applicable consumption model inclusive of any negotiated discounts reflected in the custom pricing in the contract linked to your Cloud Billing account (if applicable).
+currency	String	The currency that the cost is billed in. For more information, see Local Currency for Billing and Payments.
+currency_conversion_rate	Float	The exchange rate from US dollars to the local currency. That is, cost ÷ currency_conversion_rate is the cost in US dollars.
+usage.amount	Float	The quantity of usage.unit used.
+usage.unit	String	The base unit in which resource usage is measured. For example, the base unit for standard storage is byte-seconds.
+usage.amount_in_pricing_units	Float	The quantity of usage.pricing_unit used.Note: The first full day of data with this field is January 22, 2018.
+usage.pricing_unit	String	The unit in which resource usage is measured, according to the Cloud Billing Catalog API.Note: The first full day of data with this field is January 22, 2018.
+credits	Struct	credits contains fields that describe the structure and value of the credits associated with Google Cloud and Google Maps Platform SKUs.
+credits.id	String	If present, indicates that a credit is associated with the product SKU. credits.id values are either an alphanumeric unique identifier (for example, 12-b34-c56-d78), or a description of the credit type (such as Committed Usage Discount: CPU).
+credits.full_name	String	The name of the credit associated with the product SKU. This is a human-readable description of an alphanumeric credits.id. Examples include Free trial credit or Spend-based committed use discount.
+credits.type	String	This field describes the purpose or origin of the credits.id. Credit types include:
+credits.name	String	A description of the credit applied to the Cloud Billing account.
+credits.amount	Float	The amount of the credit applied to the usage.
+adjustment_info	Struct	adjustment_info contains fields that describe the structure and value of an adjustment to cost line items associated with a Cloud Billing account.
+adjustment_info.id	String	If present, indicates that an adjustment is associated with a cost line item. adjustment_info.id is the unique ID for all the adjustments associated with an issue.
+adjustment_info.description	String	A description of the adjustment and its cause.
+adjustment_info.type	String	The type of adjustment.
+adjustment_info.mode	String	How the adjustment was issued.
+export_time	Timestamp	A processing time associated with an append of Cloud Billing data. This will always increase with each new export.
+tags	Struct	Fields that describe the tag, such as key, value, and namespace.
+tags.key	String	The short name or display name of the key associated with this particular tag.
+tags.value	String	The resources attached to a tags.key. At any given time, exactly one value can be attached to a resource for a given key.
+tags.inherited	Boolean	Indicates whether a tag binding is inherited (Tags Inherited = True) or direct/non-inherited (Tags Inherited = False). You can create a tag binding to a parent resource in the resource hierarchy.
+tags.namespace	String	Represents the resource hierarchy that define tag key and values. Namespace can be combined with tag key and tag value short names to create a globally unique, fully qualified name for the tag key or tag value.
+cost_at_list	Float	Cost at list price per the default consumption model.
+transaction_type	String	The transaction type of the seller. The transaction type might be one of the following:
+seller_name	String	The legal name of the seller.
+price	Struct	Fields that describe the structure and values related to the prices charged for usage.
+price.list_price	Numeric	SKU list price per the default consumption model.
+price.effective_price_default	Numeric	SKU price per the default consumption model inclusive of any negotiated discounts reflected in the custom pricing in the contract linked to your Cloud Billing account (if applicable).
+price.list_price_consumption_model	Numeric	SKU list price per the applicable consumption model before any negotiated discounts reflected in the custom pricing in the contract linked to your Cloud Billing account (if applicable).
+price.effective_price	Numeric	SKU price per the applicable consumption model inclusive of any negotiated discounts reflected in the custom pricing in the contract linked to your Cloud Billing account (if applicable).
+price.tier_start_amount	Numeric	The lower bound number of units for a SKU's pricing tier. For more information, see About pricing tiers.
+price.unit	String	The unit of usage in which the pricing is specified and resource usage is measured.
+price.pricing_unit_quantity	Numeric	The lower bound number of units for a SKU's pricing tier. For more information, see About pricing tiers.
+cost_at_effective_price_default	Numeric	Cost per the default consumption model inclusive of any negotiated discounts reflected in the custom pricing in the contract linked to your Cloud Billing account (if applicable).
+cost_at_list_consumption_model	Numeric	Cost per the applicable consumption model before any negotiated discounts reflected in the custom pricing in the contract linked to your Cloud Billing account (if applicable).
+consumption_model	Struct	Fields that describe the applicable consumption model.
+consumption_model.id	String	The ID of the consumption model.
+consumption_model.description	String	The description of the consumption model.
+resource	Struct	The fields that describe the structure and value of information relevant to service resources (like a virtual machine or a SSD) that generate usage.
+resource.global_name	String	A globally unique service identifier for the resource that generated relevant usage.
+resource.name	String	A service-specific identifier for the resource that generated relevant usage. This can be input generated by the user.
+subscription	Struct	Fields that describe your spend-based or resource-based commitments. You can use these fields to analyze your fees for specific commitments.
+subscription.instance_id	String	The subscription ID linked to a commitment.

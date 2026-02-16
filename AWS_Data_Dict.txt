@@ -1,0 +1,126 @@
+Column Name,Description,Data Type
+bill_bill_type,The type of bill that this report covers (Anniversary, Purchase, Refund),string
+bill_billing_entity,Identifies whether invoices/transactions are for AWS Marketplace or AWS services,string
+bill_billing_period_end_date,End date of the billing period (UTC: YYYY-MM-DDTHH:mm:ssZ),timestamp
+bill_billing_period_start_date,Start date of the billing period (UTC: YYYY-MM-DDTHH:mm:ssZ),timestamp
+bill_invoice_id,ID associated with a specific line item (blank until final),string
+bill_invoicing_entity,AWS entity that issues the invoice,string
+bill_payer_account_id,Account ID of the paying (management) account,string
+bill_payer_account_name,Account name of the paying (management) account,string
+cost_category,Key-value pairs of cost category and their values for a line item,map <string, string>
+discount,Key-value pairs of discount types applicable to the line item,map <string, double>
+discount_bundled_discount,Bundled usage-based discount applied to the line item,double
+discount_total_discount,Sum of all discount columns for a line item,double
+identity_line_item_id,Unique ID per line item in a partition,string
+identity_time_interval,Time interval for the line item (YYYY-MM-DDTHH:mm:ssZ/YYYY-MM-DDTHH:mm:ssZ),string
+line_item_usage_account_name,Name of the account using the resource,string
+line_item_availability_zone,Availability Zone for the line item,string
+line_item_blended_cost,BlendedRate multiplied by UsageAmount,double
+line_item_blended_rate,Average cost for SKU across the organization,string
+line_item_currency_code,Line item currency code,string
+line_item_legal_entity,Seller of Record for the product or service,string
+line_item_line_item_description,Description of the line item type,string
+line_item_line_item_type,Type of charge (e.g., DiscountedUsage, Fee, Refund, Usage),string
+line_item_net_unblended_cost,After-discount cost for the line item,double
+line_item_net_unblended_rate,After-discount rate for the line item,string
+line_item_normalization_factor,Normalization factor for instance size,double
+line_item_normalized_usage_amount,Normalized usage amount for size-flex RIs,double
+line_item_operation,AWS operation associated with line item,string
+line_item_product_code,Product code for the measured service,string
+line_item_resource_id,Resource ID if included (INCLUDE_RESOURCES required),string
+line_item_tax_type,Tax type applied,string
+line_item_unblended_cost,UnblendedRate multiplied by UsageAmount,double
+line_item_unblended_rate,Unblended rate for service usage,string
+line_item_usage_account_id,Account ID using the resource,string
+line_item_usage_amount,Amount of usage incurred,double
+line_item_usage_end_date,Usage end date/time (UTC),timestamp
+line_item_usage_start_date,Usage start date/time (UTC),timestamp
+line_item_usage_type,Usage type details,string
+pricing_currency,Currency for pricing data,string
+pricing_lease_contract_length,Lease contract length for Reserved Instances,string
+pricing_offering_class,Reserved Instance offering class,string
+pricing_public_on_demand_cost,On-demand rate cost for the line item,double
+pricing_public_on_demand_rate,On-demand rate for the line item,string
+pricing_purchase_option,Purchase method (All Upfront, Partial Upfront, No Upfront),string
+pricing_rate_code,Unique product/offer/rate code,string
+pricing_rate_id,Rate ID for the line item,string
+pricing_term,Term (On-Demand, Reserved),string
+pricing_unit,Unit for pricing calculations,string
+product,Product attribute key-value pairs,map <string, string>
+product_comment,Product comment,string
+product_fee_code,Fee code string
+product_fee_description,Fee description,string
+product_from_location,Origin location of usage,string
+product_from_location_type,Type of origin location,string
+product_from_region_code,Source region code,string
+product_instanceSKU,Instance SKU,string
+product_instance_family,EC2 instance family,string
+product_instance_type,Instance type definition,string
+product_location,Region for Amazon S3 bucket,string
+product_location_type,Endpoint of your task,string
+product_operation,Product-specific AWS operation,string
+product_pricing_unit,Smallest billing unit,string
+product_product_family,Product category,string
+product_region_code,Region code for AWS service,string
+product_sku,Product SKU,string
+product_servicecode,AWS service code,string
+product_to_location_type,Service usage destination location type,string
+product_to_location,Usage destination location,string
+product_to_region_code,Destination region code,string
+product_usagetype,Usage details,string
+reservation_amortized_upfront_cost_for_usage,Amortized upfront payment for RIs used,double
+reservation_amortized_upfront_fee_for_billing_period,Amortized upfront fee for the month,double
+reservation_availability_zone,Availability Zone of reserved resource,string
+reservation_effective_cost,Sum of hourly and amortized upfront rates,double
+reservation_end_time,Reservation lease end date,string
+reservation_modification_status,RI lease modification status,string
+reservation_net_amortized_upfront_cost_for_usage,Net amortized upfront payment (with discount) for use,double
+reservation_net_amortized_upfront_fee_for_billing_period,Net cost of reservation upfront fee for billing period,double
+reservation_net_effective_cost,Net effective RI cost,double
+reservation_net_recurring_fee_for_usage,After-discount recurring RI fee,double
+reservation_net_unused_amortized_upfront_fee_for_billing_period,Net unused amortized upfront fee,double
+reservation_net_unused_recurring_fee,Recurring fees for unused reservation hours,double
+reservation_net_upfront_value,Upfront value of RI with discount,double
+reservation_normalized_units_per_reservation,Normalized units per reservation,string
+reservation_number_of_reservations,Number of reservations for the subscription,string
+reservation_recurring_fee_for_usage,Recurring fee amortized for usage (partial/no upfront RIs),double
+reservation_reservation_a_r_n,RI ARN (lease ID),string
+reservation_start_time,Start date of the RI term,string
+reservation_subscription_id,Unique offer ID for RI subscription,string
+reservation_total_reserved_normalized_units,Sum of reserved normalized units,string
+reservation_total_reserved_units,Reserved units for the reservation,string
+reservation_units_per_reservation,Units per reservation,string
+reservation_unused_amortized_upfront_fee_for_billing_period,Amortized portion of unused upfront fee,double
+reservation_unused_normalized_unit_quantity,Unused normalized units,double
+reservation_unused_quantity,Unused RI hours,double
+reservation_unused_recurring_fee,Recurring fees for unused hours,double
+reservation_upfront_value,Upfront price paid for RI,double
+resource_tags,Resource tags, as key-value pairs,map <string, string>
+savings_plan_amortized_upfront_commitment_for_billing_period,Amortized upfront fee for Savings Plan,double
+savings_plan_end_time,End time for the Savings Plan,string
+savings_plan_instance_type_family,Instance family for the Savings Plan,string
+savings_plan_net_amortized_upfront_commitment_for_billing_period,Net amortized upfront for Savings Plan(double)
+savings_plan_net_recurring_commitment_for_billing_period,Net recurring commitment (after discount),double
+savings_plan_net_savings_plan_effective_cost,Effective cost with Savings Plan,double
+savings_plan_offering_type,Type of Savings Plan purchased,string
+savings_plan_payment_option,Payment options (All/Partial/No Upfront),string
+savings_plan_purchase_term,Duration of Savings Plan,string
+savings_plan_recurring_commitment_for_billing_period,Monthly recurring fee for Savings Plan,double
+savings_plan_region,Region for the Savings Plan,string
+savings_plan_savings_plan_a_r_n,Unique Savings Plan identifier,string
+savings_plan_savings_plan_effective_cost,Proportion of the plan commitment allocated to usage,double
+savings_plan_savings_plan_rate,Rate for the usage,double
+savings_plan_start_time,Start date for the Savings Plan,string
+savings_plan_total_commitment_to_date,Total amortized and recurring commitment to date,double
+savings_plan_used_commitment,Dollar amount of the Savings Plan commitment used,double
+split_line_item_actual_usage,Actual vCPU or memory usage (ECS/EKS),double
+split_line_item_net_split_cost,Effective split cost after all discounts,double
+split_line_item_net_unused_cost,Unused effective cost after discounts,double
+split_line_item_parent_resource_id,Parent EC2 instance ID,string
+split_line_item_public_on_demand_split_cost,Cost for allocated CPU/memory based on public on-demand,double
+split_line_item_public_on_demand_unused_cost,Unused on-demand cost for allocated CPU/memory,double
+split_line_item_reserved_usage,Reserved vCPU or memory usage,double
+split_line_item_split_cost,Cost for CPU/memory allocated to ECS task/K8s pod,double
+split_line_item_split_usage,Allocated vCPU/memory for ECS task/K8s pod,double
+split_line_item_split_usage_ratio,Ratio of allocated vs. total available CPU/memory,double
+split_line_item_unused_cost,Unused cost for CPU/memory allocated,double
