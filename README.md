@@ -6,6 +6,26 @@ Problem Definition: As more and more enterprises are migrating their data from o
 
 For the sake of ongoing study the information about model architecture cannot be disclosed but there are basically two models one is Variational Autoencoder based model used to assign pseudo labels based on threshold and other model is Classification Model Feeding on the labelled output from downstream model
 
-To execute the script Start with Explore Synthesize.ipynb and install all the requirements run the script then proceed to next script usl pseudo label after that running the classifier anomaly detection then the finally LLMModule.ipynb
+1. AWS Ingestion Path
+Source: AWS Cost and Usage Report (CUR).
+
+Trigger: An AWS Lambda function processes the reports.
+
+Storage: Data is temporarily staged in an Amazon S3 Standard bucket before being pulled into the GCP environment.
+
+2. Azure Ingestion Path
+Source: Azure Cost Management and Billing.
+
+Storage: Data is exported to an Azure Storage Container (Blob Storage).
+
+3. GCP Ingestion Path
+Source: Cloud Billing API.
+
+Direct Ingestion: Data is streamed or loaded directly into the BigQuery environment.
+
+4. Processing & Centralization
+Google Cloud Functions: Acts as the primary orchestrator and transformer. It fetches the staged data from AWS S3 and Azure Storage, standardizes the schema, and loads it into the destination.
+
+Destination: Google BigQuery, enabling cross-cloud cost analysis and visualization (e.g., via Looker or Data Studio).
 
 
