@@ -1,297 +1,127 @@
+from kfp import dsl
+from kfp.dsl import Artifact, Input, Output, Model, Dataset, component
 
-from kfp import dsl, compiler
-from kfp.client import Client
-from kfp.dsl import Dataset, Model, Metrics, Output, Input
-
-
-@dsl.component(
-    base_image='python:3.10.11',
-    packages_to_install=['pandas==2.0.3', 'scikit-learn==1.3.0']
+# --- 1. CTGAN Data Synthesis Component ---
+@component(
+    packages_to_install=["sdv", "pandas", "google-cloud-storage"],
+    base_image="python:3.9"
 )
-def load_data(
-    n_samples: int,
-    n_features: int,
-    output_data: Output[Dataset]
+def synthesize_data(
+    model_path: str,
+    num_rows: int,
+    synthetic_data: Output[Dataset]
 ):
-
+    import pickle
     import pandas as pd
-    
-    print(f" Generating dataset: {n_samples} samples, {n_features} features")
-    
-    X, y = make_classification(
-        n_samples=n_samples,
-        n_features=n_features,
-        n_informative=int(n_features * 0.7),
-        n_redundant=int(n_features * 0.2),
-        n_classes=2,
-        random_state=42
-    )
-    
-    feature_names = [f'feature_{i}' for i in range(n_features)]
-    df = pd.DataFrame(X, columns=feature_names)
-    df['target'] = y
-    
-    # Save to artifact path (KFP provides this path automatically)
-    # In Airflow, you'd manually manage this path
-    df.to_csv(output_data.path, index=False, encoding='utf-8')
-    
-    # Add metadata - this appears in KFP UI and enables search/filtering
-    # In Airflow, you'd need MLflow or custom logging for this
-    output_data.metadata['num_samples'] = n_samples
-    output_data.metadata['num_features'] = n_features
-    output_data.metadata['target_distribution'] = str(df['target'].value_counts().to_dict())
-    
-    print(f" Data saved: {len(df)} rows")
-    print(f"   Target distribution: {df['target'].value_counts().to_dict()}")
+    from google.cloud import storage
 
-@dsl.component(
-    base_image='python:3.9',
-    packages_to_install=['pandas==2.0.3', 'scikit-learn==1.3.0']
+    # Load CTGAN model from GCS
+    bucket_name = model_path.split("/")[2]
+    blob_name = "/".join(model_path.split("/")[3:])
+    
+    storage_client = storage.Client()
+    blob = storage_client.bucket(bucket_name).blob(blob_name)
+    
+    with blob.open("rb") as f:
+        # Assumes CTGANSynthesizer or similar from SDV
+        model = pickle.load(f)
+    
+    # Generate synthetic samples
+    df_synthetic = model.sample(num_rows=num_rows)
+    df_synthetic.to_csv(synthetic_data.path, index=False)
+
+# --- 2. VAE Anomaly Detection Component ---
+@component(
+    packages_to_install=["torch", "pandas", "numpy", "google-cloud-storage"],
+    base_image="python:3.9"
 )
-def preprocess_data(
+def vae_feature_extraction(
+    model_path: str,
     input_data: Input[Dataset],
-    test_size: float,
-    train_data: Output[Dataset],
-    test_data: Output[Dataset]
+    vae_output: Output[Dataset]
 ):
+    import pickle
+    import torch
     import pandas as pd
-    from sklearn.model_selection import train_test_split
-    from sklearn.preprocessing import StandardScaler
+    import numpy as np
+    from google.cloud import storage
+
+    # Load VAE model (assumed PyTorch-based stored in pickle)
+    bucket_name = model_path.split("/")[2]
+    blob_name = "/".join(model_path.split("/")[3:])
+    storage_client = storage.Client()
+    blob = storage_client.bucket(bucket_name).blob(blob_name)
     
-    # Read from artifact path (KFP downloaded this from MinIO automatically)
-    print(f" Loading data from previous step...")
+    with blob.open("rb") as f:
+        vae_model = pickle.load(f)
+    vae_model.eval()
+    
     df = pd.read_csv(input_data.path)
-    print(f"   Loaded {len(df)} rows")
+    tensor_data = torch.FloatTensor(df.values)
     
-    # Separate features and target
-    X = df.drop('target', axis=1)
-    y = df['target']
+    with torch.no_grad():
+        recon_batch, mu, logvar = vae_model(tensor_data)
+        
+        # 1. Reconstruction Error (MSE per sample)
+        recon_error = torch.mean((recon_batch - tensor_data)**2, dim=1).numpy()
+        
+        # 2. KL Divergence Formula: 
+        # $$KL(q(z|x) || p(z)) = -0.5 \times \sum(1 + \log(\sigma^2) - \mu^2 - \sigma^2)$$
+        kl_div = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1).numpy()
     
-    # Split data
-    print(f" Splitting: {(1-test_size)*100:.0f}% train, {test_size*100:.0f}% test")
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, random_state=42, stratify=y
-    )
-    
-    # Scale features
-    print(" Applying StandardScaler...")
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
-    
-    # Create output DataFrames
-    train_df = pd.DataFrame(X_train_scaled, columns=X.columns)
-    train_df['target'] = y_train.values
-    
-    test_df = pd.DataFrame(X_test_scaled, columns=X.columns)
-    test_df['target'] = y_test.values
-    
-    # Save to artifact paths
-    train_df.to_csv(train_data.path, index=False, encoding='utf-8')
-    test_df.to_csv(test_data.path, index=False, encoding='utf-8')
-    
-    # Add metadata
-    train_data.metadata['samples'] = len(train_df)
-    train_data.metadata['scaled'] = True
-    test_data.metadata['samples'] = len(test_df)
-    test_data.metadata['scaled'] = True
-    
-    print(f" Train set: {len(train_df)} samples")
-    print(f" Test set: {len(test_df)} samples")
+    # Add new features to the dataframe
+    df['recon_error'] = recon_error
+    df['kl_divergence'] = kl_div
+    df.to_csv(vae_output.path, index=False)
 
-
-@dsl.component(
-    base_image='python:3.9',
-    packages_to_install=['pandas==2.0.3', 'scikit-learn==1.3.0', 'joblib==1.3.2']
+# --- 3. CatBoost Prediction Component ---
+@component(
+    packages_to_install=["catboost", "pandas", "google-cloud-storage"],
+    base_image="python:3.9"
 )
-def train_model(
-    train_data: Input[Dataset],
-    n_estimators: int,
-    max_depth: int,
-    model_output: Output[Model]
+def predict_final_value(
+    model_path: str,
+    engineered_data: Input[Dataset],
+    final_results: Output[Dataset]
 ):
-    """Train a RandomForest classifier.
-    
-    Args:
-        train_data: Training Dataset from preprocessing
-        n_estimators: Number of trees in the forest
-        max_depth: Maximum depth of each tree
-        model_output: Output Model artifact
-    """
+    import pickle
     import pandas as pd
-    from sklearn.ensemble import RandomForestClassifier
-    import joblib
-    
-    # Load training data
-    print(f" Loading training data...")
-    df = pd.read_csv(train_data.path)
-    X_train = df.drop('target', axis=1)
-    y_train = df['target']
-    print(f"   Training samples: {len(X_train)}")
-    
-    # Train model
-    print(f" Training RandomForest:")
-    print(f"   n_estimators: {n_estimators}")
-    print(f"   max_depth: {max_depth}")
-    
-    model = RandomForestClassifier(
-        n_estimators=n_estimators,
-        max_depth=max_depth,
-        random_state=42,
-        n_jobs=-1  # Use all CPU cores
-    )
-    model.fit(X_train, y_train)
-    
-    # Calculate training accuracy
-    train_accuracy = model.score(X_train, y_train)
-    print(f" Training accuracy: {train_accuracy:.4f}")
-    
-    # Save model to artifact path
-    joblib.dump(model, model_output.path)
-    
-    # Add rich metadata - this is automatically tracked!
-    # In Airflow, you'd need MLflow for this level of tracking
-    model_output.metadata['framework'] = 'sklearn'
-    model_output.metadata['algorithm'] = 'RandomForestClassifier'
-    model_output.metadata['n_estimators'] = n_estimators
-    model_output.metadata['max_depth'] = max_depth
-    model_output.metadata['train_accuracy'] = float(train_accuracy)
-    model_output.metadata['n_features'] = X_train.shape[1]
-    
-    print(f" Model saved with metadata")
+    from google.cloud import storage
 
-@dsl.component(
-    base_image='python:3.9',
-    packages_to_install=['pandas==2.0.3', 'scikit-learn==1.3.0', 'joblib==1.3.2']
-)
-def evaluate_model(
-    model_input: Input[Model],
-    test_data: Input[Dataset],
-    metrics: Output[Metrics]
-) -> float:
+    # Load CatBoost model
+    bucket_name = model_path.split("/")[2]
+    blob_name = "/".join(model_path.split("/")[3:])
+    storage_client = storage.Client()
+    blob = storage_client.bucket(bucket_name).blob(blob_name)
     
-    import pandas as pd
-    from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-    import joblib
+    with blob.open("rb") as f:
+        cat_model = pickle.load(f)
     
-    # Load model
-    print(f" Loading model...")
-    model = joblib.load(model_input.path)
+    df = pd.read_csv(engineered_data.path)
     
-    # Load test data
-    print(f" Loading test data...")
-    df = pd.read_csv(test_data.path)
-    X_test = df.drop('target', axis=1)
-    y_test = df['target']
-    print(f"   Test samples: {len(X_test)}")
-    
-    # Make predictions
-    print(f" Making predictions...")
-    y_pred = model.predict(X_test)
-    
-    # Calculate metrics
-    accuracy = accuracy_score(y_test, y_pred)
-    precision = precision_score(y_test, y_pred, average='weighted')
-    recall = recall_score(y_test, y_pred, average='weighted')
-    f1 = f1_score(y_test, y_pred, average='weighted')
-    
-    # Log metrics to artifact - THESE APPEAR IN KFP UI!
-    # In Airflow, you'd need MLflow or custom dashboards
-    metrics.log_metric('accuracy', float(accuracy))
-    metrics.log_metric('precision', float(precision))
-    metrics.log_metric('recall', float(recall))
-    metrics.log_metric('f1_score', float(f1))
-    
-    # Print results (appears in pod logs)
-    print("\n" + "=" * 50)
-    print(" MODEL EVALUATION RESULTS")
-    print("=" * 50)
-    print(f"   Accuracy:  {accuracy:.4f}")
-    print(f"   Precision: {precision:.4f}")
-    print(f"   Recall:    {recall:.4f}")
-    print(f"   F1 Score:  {f1:.4f}")
-    print("=" * 50)
-    
-    # Return accuracy - can be used for conditional deployment
-    return float(accuracy)
+    # Predict using the data (including recon_error and kl_divergence)
+    df['prediction'] = cat_model.predict(df)
+    df.to_csv(final_results.path, index=False)
 
+# --- Pipeline Definition ---
 @dsl.pipeline(
-    name='ml-training-pipeline',
-    description='Complete ML pipeline: Load → Preprocess → Train → Evaluate'
+    name="3-model-ensemble-pipeline",
+    pipeline_root="gs://your-project-bucket/pipeline_root"
 )
-def ml_training_pipeline(
-    n_samples: int = 1000,
-    n_features: int = 20,
-    test_size: float = 0.2,
-    n_estimators: int = 100,
-    max_depth: int = 10
+def multi_model_pipeline(
+    ctgan_uri: str,
+    vae_uri: str,
+    catboost_uri: str,
+    num_samples: int = 5000
 ):
+    step1 = synthesize_data(model_path=ctgan_uri, num_rows=num_samples)
     
-    load_task = load_data(
-        n_samples=n_samples,
-        n_features=n_features
+    step2 = vae_feature_extraction(
+        model_path=vae_uri, 
+        input_data=step1.outputs['synthetic_data']
     )
     
-    preprocess_task = preprocess_data(
-        input_data=load_task.outputs['output_data'],  # Automatic dependency!
-        test_size=test_size
+    step3 = predict_final_value(
+        model_path=catboost_uri, 
+        engineered_data=step2.outputs['vae_output']
     )
-    
-    train_task = train_model(
-        train_data=preprocess_task.outputs['train_data'],
-        n_estimators=n_estimators,
-        max_depth=max_depth
-    )
-    
-    evaluate_task = evaluate_model(
-        model_input=train_task.outputs['model_output'],
-        test_data=preprocess_task.outputs['test_data']
-    )
-
-if __name__ == '__main__':
-    import sys
-    
-    # Compile the pipeline
-    print("=" * 60)
-    print("KUBEFLOW PIPELINES - ML TRAINING PIPELINE")
-    print("=" * 60)
-    
-    print("\n Step 1: Compiling pipeline to YAML...")
-    compiler.Compiler().compile(
-        pipeline_func=ml_training_pipeline,
-        package_path='ml_training_pipeline.yaml'
-    )
-    print("    Compiled to: ml_training_pipeline.yaml")
-    
-    # Connect to KFP
-    print("\n Step 2: Connecting to Kubeflow Pipelines...")
-    try:
-        client = Client(host='http://localhost:8888')
-        print("    Connected to KFP API")
-    except Exception as e:
-        print(f"    Connection failed: {e}")
-        print("   Make sure port-forward is running:")
-        print("   kubectl port-forward -n kubeflow svc/ml-pipeline 8888:8888 --address 0.0.0.0 &")
-        sys.exit(1)
-    
-    # Submit the pipeline
-    print("\n Step 3: Submitting pipeline...")
-    run = client.create_run_from_pipeline_package(
-        pipeline_file='ml_training_pipeline.yaml',
-        arguments={
-            'n_samples': 1000,
-            'n_features': 20,
-            'test_size': 0.2,
-            'n_estimators': 100,
-            'max_depth': 10
-        },
-        run_name='ml-training-run',
-        experiment_name='ml-training-experiments'
-    )
-    
-    print(f"    Run submitted!")
-    run_id = getattr(run, 'run_id', None) or getattr(run, 'id', None) or run
-    print(f"   Run ID: {run_id}")
-    print("\n" + "=" * 60)
-    print("WHAT HAPPENS NEXT:")
-    print("=" * 60)
