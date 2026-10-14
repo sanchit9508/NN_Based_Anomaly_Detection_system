@@ -1,7 +1,7 @@
 from kfp import dsl
 from kfp.dsl import Artifact, Input, Output, Model, Dataset, component
+from functions.synthesize import 
 
-# --- 1. CTGAN Data Synthesis Component ---
 @component(
     packages_to_install=["sdv", "pandas", "google-cloud-storage"],
     base_image="python:3.9"
@@ -27,10 +27,12 @@ def synthesize_data(
         model = pickle.load(f)
     
     # Generate synthetic samples
+    aws_data = synthesize()
+    gcp_data = 
+    azure_data = 
     df_synthetic = model.sample(num_rows=num_rows)
     df_synthetic.to_csv(synthetic_data.path, index=False)
 
-# --- 2. VAE Anomaly Detection Component ---
 @component(
     packages_to_install=["torch", "pandas", "numpy", "google-cloud-storage"],
     base_image="python:3.9"

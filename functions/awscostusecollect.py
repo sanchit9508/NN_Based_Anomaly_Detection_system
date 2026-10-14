@@ -5,6 +5,15 @@ import os
 
 
 def lambda_handler(event, context):
+
+    """
+    This function is triggered by an S3 event when a new file is uploaded 
+    to the specified S3 bucket.
+    It processes the uploaded file, extracts relevant data, and performs
+    necessary operations such as data transformation and storage.
+    Deploy this function in AWS Lambda and configure it to be triggered by 
+    S3 events for the target bucket. With pandas as lambda layers.
+    """
     
     s3 = boto3.client('s3')
     bucket_name = 'finops55'
